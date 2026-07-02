@@ -1,0 +1,339 @@
+/* ================================================================
+   TenderJalanJawa — Stylesheet Utama
+   Kelompok 7 | Blockchain Technology | Institut Teknologi PLN
+   ================================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:        #0A1628;
+  --navy-mid:    #112240;
+  --navy-light:  #1A3356;
+  --blue:        #1D5FA8;
+  --blue-bright: #2E86DE;
+  --blue-pale:   #E8F1FB;
+  --teal:        #0F7B6C;
+  --teal-pale:   #E3F5F2;
+  --amber:       #C17B2A;
+  --amber-pale:  #FDF3E3;
+  --red:         #B03A2E;
+  --red-pale:    #FDE8E6;
+  --green:       #1E7A45;
+  --bg:          #F8FAFC;
+  --border:      #E2E8F0;
+  --text:        #334155;
+  --text-light:  #64748b;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ----------------------------------------------------------------
+   HALAMAN LOGIN
+   ---------------------------------------------------------------- */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EEF0F5;
+  padding: 20px;
+  position: relative;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(29,95,168,0.15) 1px, transparent 0);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+.login-card {
+  background: #ffffff;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  width: 100%;
+  max-width: 440px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+  animation: fadeInUp 0.6s ease;
+}
+
+.login-card h2 {
+  font-family: 'Playfair Display', serif;
+  color: var(--navy);
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ----------------------------------------------------------------
+   HEADER & NAVIGASI
+   ---------------------------------------------------------------- */
+header {
+  background-color: var(--navy);
+  color: #ffffff;
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 4px solid var(--blue);
+}
+
+.logo-area h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
+}
+
+.logo-area span {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--blue-bright);
+  display: block;
+  margin-top: 2px;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-pill {
+  background-color: var(--navy-light);
+  border: 1px solid var(--blue);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+nav {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  padding: 0 2rem;
+}
+
+.nav-link {
+  padding: 1rem 1.5rem;
+  color: var(--text-light);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.nav-link.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+  background-color: var(--blue-pale);
+}
+
+/* ----------------------------------------------------------------
+   LAYOUT UTAMA
+   ---------------------------------------------------------------- */
+main {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+/* ----------------------------------------------------------------
+   CARD
+   ---------------------------------------------------------------- */
+.card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  margin-bottom: 1.25rem;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+
+/* ----------------------------------------------------------------
+   FORM & INPUT
+   ---------------------------------------------------------------- */
+.form-group { margin-bottom: 1.25rem; }
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background-color: #fff;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus    { outline: none; border-color: var(--blue); }
+.form-control:disabled { background-color: var(--bg); color: #94a3b8; cursor: not-allowed; }
+
+/* ----------------------------------------------------------------
+   UPLOAD ZONE
+   ---------------------------------------------------------------- */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--bg);
+}
+
+.upload-zone:hover        { border-color: var(--blue-bright); background: var(--blue-pale); }
+.upload-zone.disabled     { pointer-events: none; opacity: 0.6; background-color: var(--bg); }
+
+/* ----------------------------------------------------------------
+   BUTTONS
+   ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.75rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-primary { background-color: var(--blue);  color: #fff; }
+.btn-primary:hover:not(:disabled) { background-color: var(--blue-bright); }
+.btn-teal    { background-color: var(--teal);  color: #fff; }
+.btn-outline { border: 1px solid var(--border); background-color: transparent; color: var(--text); }
+.btn-outline:hover { background-color: var(--border); }
+.btn-danger  { background-color: var(--red);   color: #fff; }
+.btn-login   { margin-bottom: 0.75rem; padding: 0.85rem; font-size: 0.95rem; }
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #cbd5e1 !important;
+  color: #64748b !important;
+  border: none !important;
+}
+
+/* ----------------------------------------------------------------
+   TABEL
+   ---------------------------------------------------------------- */
+table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.9rem; }
+
+th {
+  background-color: var(--bg);
+  color: var(--text-light);
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+}
+
+td { padding: 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+
+/* ----------------------------------------------------------------
+   ALERTS & STATUS
+   ---------------------------------------------------------------- */
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  display: flex;
+  gap: 12px;
+  font-size: 0.88rem;
+  align-items: flex-start;
+}
+
+.alert-info    { background-color: var(--blue-pale);  color: var(--blue);  border-left: 4px solid var(--blue);  }
+.alert-success { background-color: var(--teal-pale);  color: var(--teal);  border-left: 4px solid var(--teal);  }
+.alert-warning { background-color: var(--amber-pale); color: var(--amber); border-left: 4px solid var(--amber); }
+.alert-danger  { background-color: var(--red-pale);   color: var(--red);   border-left: 4px solid var(--red);   }
+
+.status-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background-color: var(--bg);
+  width: fit-content;
+}
+
+.hash-box {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  background-color: var(--bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+  word-break: break-all;
+  margin-top: 4px;
+  color: #475569;
+}
+
+/* ----------------------------------------------------------------
+   ANIMASI
+   ---------------------------------------------------------------- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TenderJalanJawa — Portal Vendor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <h1>TenderJalanJawa</h1>
+    <span>Ethereum Sepolia Testnet</span>
+  </div>
+  <div class="user-badge">
+    <div class="role-pill">Vendor</div>
+    <button class="btn btn-outline" onclick="Session.logout()"
+      style="padding:6px 12px; font-size:0.8rem; background:#ffffff15; color:#fff; border-color:#ffffff30;">
+      Keluar 🚪
+    </button>
+  </div>
+</header>
+
+<nav>
+  <a class="nav-link" href="admin.html" id="link-admin" style="display:none;">🔒 Ruang Pokja Pemilihan</a>
+  <a class="nav-link active" href="vendor.html">🏢 Portal Unggah Vendor</a>
+  <a class="nav-link" href="publik.html">👁️ Papan Transparansi Publik</a>
+</nav>
+
+<main>
+  <div class="card">
+    <h3>🏢 Formulir Pengajuan Dokumen Lelang Elektronik</h3>
+
+    <!-- Status checker -->
+    <div id="v-status-checker" class="alert alert-warning">
+      <span>⚠️</span>
+      <div id="v-status-msg">Menghubungkan ke jaringan Sepolia...</div>
+    </div>
+
+    <!-- Banner sukses submit -->
+    <div id="v-submitted-banner" class="alert alert-success" style="display:none;">
+      <span>🔒</span>
+      <div><strong>Dokumen Terkunci On-Chain!</strong> Penawaran Anda tersimpan permanen di blockchain. Data tidak bisa diubah lagi.</div>
+    </div>
+
+    <!-- Wallet info bar -->
+    <div style="background:#0f172a; border-radius:8px; padding:10px 14px; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:11px; color:#64748b;">Wallet Aktif (MetaMask)</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="wallet-display" style="font-family:monospace; font-size:11px; color:#fbbf24;">⚠️ Belum terhubung</span>
+        <button onclick="hubungkanDompet(onWalletConnected)"
+          style="padding:3px 10px; background:#E28743; border:none; border-radius:5px; color:white; font-size:10px; cursor:pointer; font-family:inherit;">
+          🦊 Connect
+        </button>
+      </div>
+    </div>
+
+    <!-- Form isian -->
+    <div class="grid" style="grid-template-columns:1fr 1fr; gap:20px;">
+      <div>
+        <div class="form-group"><label>Nama Perusahaan (Sesuai Akta)</label><input type="text" id="v-nama" class="form-control" placeholder="PT. Pembangunan Sejahtera" disabled></div>
+        <div class="form-group"><label>Nomor Pokok Wajib Pajak (NPWP)</label><input type="text" id="v-npwp" class="form-control" placeholder="01.234.567.8-999.000" disabled></div>
+        <div class="form-group"><label>Pengalaman Kerja Konstruksi (Tahun)</label><input type="number" id="v-pengalaman" class="form-control" placeholder="Contoh: 5" disabled></div>
+      </div>
+      <div>
+        <div class="form-group"><label>Nomor SIUJK</label><input type="text" id="v-siujk" class="form-control" placeholder="1-3274-09-122-1-00123" disabled></div>
+        <div class="form-group"><label>Nilai Penawaran Harga (IDR)</label><input type="number" id="v-harga" class="form-control" placeholder="Contoh: 1400000000" disabled></div>
+        <div class="form-group"><label>Metode Pelaksanaan Kerja</label><input type="text" id="v-metode" class="form-control" placeholder="Metode Struktur Beton Pracetak K-400" disabled></div>
+      </div>
+    </div>
+
+    <!-- Upload PDF -->
+    <div class="form-group" style="margin-top:15px;">
+      <label>Upload Dokumen Kualifikasi & Surat Legalitas (PDF)</label>
+      <input type="file" id="pdf-file-input" accept=".pdf" style="display:none;" onchange="handleFilePDF(event)">
+      <div class="upload-zone disabled" id="upload-zone" onclick="bukaFileExplorer()">
+        <div style="font-size:24px; margin-bottom:5px;">📁</div>
+        <div id="upload-text" style="font-size:0.9rem; font-weight:500; color:var(--text);">Klik untuk pilih file berkas surat...</div>
+        <div style="font-size:0.75rem; color:var(--text-light); margin-top:2px;">PDF (SIUJK, Akta, Sertifikasi ISO) maks. 10MB</div>
+      </div>
+    </div>
+
+    <!-- Hash output -->
+    <div style="margin:1rem 0; padding:1rem; background:var(--bg); border-radius:8px;">
+      <span style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:4px;">Kunci Tanda Tangan Digital (SHA-256 Document Signature)</span>
+      <button class="btn btn-outline" id="btn-gen-hash" onclick="generateSignatureVendor()"
+        style="width:auto; padding:6px 12px; font-size:0.8rem; margin-bottom:8px;" disabled>
+        🔑 Amankan Dokumen & Buat Hash
+      </button>
+      <div id="hash-output" class="hash-box">Menunggu kalkulasi dokumen fisik...</div>
+    </div>
+
+    <button class="btn btn-teal" id="btn-submit-vendor" onclick="submitVendorBlockchain()" disabled>
+      🚀 Submit & Kunci ke Blockchain
+    </button>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/session.js"></script>
+<script src="js/blockchain.js"></script>
+<script>
+  if (!Session.requireLogin(['vendor'])) { /* redirect handled */ }
+
+  // State lokal halaman ini
+  let fileUploaded = false, fileHash = null, fileName = null, hashGenerated = false;
+
+  window.addEventListener('DOMContentLoaded', async () => {
+
+    const ok = await autoKoneksiWallet();
+    if (ok) await onWalletConnected(await signer.getAddress());
+    else updateStatusChecker();
+  });
+
+  async function onWalletConnected(addr) {
+    document.getElementById('wallet-display').textContent = addr.substring(0, 16) + '...';
+    document.getElementById('wallet-display').style.color = '#4ade80';
+    await sinkronisasiStatus();
+    updateStatusChecker();
+  }
+
+  function updateStatusChecker() {
+    const status  = Session.getStatus();
+    const checker = document.getElementById('v-status-checker');
+    const msg     = document.getElementById('v-status-msg');
+    const formIds = ['v-nama','v-npwp','v-pengalaman','v-siujk','v-harga','v-metode'];
+    const zone    = document.getElementById('upload-zone');
+
+    if (status === 'buka') {
+      checker.style.display = 'none';
+      formIds.forEach(id => document.getElementById(id).disabled = false);
+      document.getElementById('btn-gen-hash').disabled = false;
+      zone.classList.remove('disabled');
+    } else {
+      checker.style.display = 'flex';
+      checker.className     = status === 'selesai' || status === 'tutup' ? 'alert alert-danger' : 'alert alert-warning';
+      msg.innerHTML = status === 'selesai' || status === 'tutup'
+        ? '<strong>Batas Waktu Habis!</strong> Lelang sudah ditutup. Tidak ada penawaran baru yang diterima.'
+        : 'Gerbang registrasi belum dibuka oleh Pokja Pemilihan.';
+      formIds.forEach(id => document.getElementById(id).disabled = true);
+      document.getElementById('btn-gen-hash').disabled    = true;
+      document.getElementById('btn-submit-vendor').disabled = true;
+      zone.classList.add('disabled');
+    }
+  }
+
+  function bukaFileExplorer() {
+    if (Session.getStatus() !== 'buka') { alert("⚠️ Gerbang lelang belum dibuka."); return; }
+    document.getElementById('pdf-file-input').click();
+  }
+
+  async function handleFilePDF(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf')) { alert('❌ Hanya PDF!'); event.target.value=''; return; }
+    if (file.size > 10*1024*1024) { alert('❌ Maks 10MB!'); event.target.value=''; return; }
+
+    const zone = document.getElementById('upload-zone');
+    document.getElementById('upload-text').innerHTML = `⏳ Menghitung SHA-256 dari <strong>${file.name}</strong>...`;
+    zone.style.borderColor = 'var(--amber)'; zone.style.background = '#fffbeb';
+
+    try {
+      const buf  = await file.arrayBuffer();
+      const hash = await crypto.subtle.digest('SHA-256', buf);
+      fileHash   = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+      fileName   = file.name; fileUploaded = true;
+
+      zone.style.borderColor = 'var(--teal)'; zone.style.background = 'var(--teal-pale)';
+      document.getElementById('upload-text').innerHTML =
+        `📄 <strong>${file.name}</strong> (${(file.size/1024).toFixed(1)} KB) ✅ SHA-256 selesai`;
+      document.getElementById('hash-output').textContent    = fileHash;
+      hashGenerated = true;
+      document.getElementById('btn-submit-vendor').disabled = false;
+      alert(`✅ PDF berhasil di-hash!\n\nSHA-256:\n${fileHash.substring(0,32)}\n${fileHash.substring(32)}`);
+    } catch (e) {
+      alert('❌ Gagal memproses file.'); event.target.value = '';
+    }
+  }
+
+  function generateSignatureVendor() {
+    if (!fileUploaded || !fileHash) {
+      alert('⚠️ Upload dokumen PDF terlebih dahulu!'); return;
+    }
+    document.getElementById('hash-output').textContent    = fileHash;
+    hashGenerated = true;
+    document.getElementById('btn-submit-vendor').disabled = false;
+    alert(`🔑 Hash dikonfirmasi!\nFile: ${fileName}`);
+  }
+
+  async function submitVendorBlockchain() {
+    const nama  = document.getElementById('v-nama').value.trim();
+    const harga = document.getElementById('v-harga').value.trim();
+    const exp   = document.getElementById('v-pengalaman').value.trim();
+    const hash  = document.getElementById('hash-output').textContent;
+
+    const kual = Session.getKual();
+    if (kual.maxPagu && parseFloat(harga) > kual.maxPagu) {
+      alert('❌ Penawaran melebihi Pagu Anggaran!'); return;
+    }
+    if (kual.minExp && parseFloat(exp) < kual.minExp) {
+      alert('❌ Pengalaman belum memenuhi syarat minimum!'); return;
+    }
+    if (!contract) { alert("⚠️ Hubungkan MetaMask terlebih dahulu!"); return; }
+
+    try {
+      const btn = document.getElementById('btn-submit-vendor');
+      btn.disabled = true; btn.textContent = "⏳ Mengirim ke Blockchain...";
+
+      // Catatan: skor TIDAK dikirim dari sini. Skor dihitung otomatis
+      // oleh smart contract berdasarkan harga & pengalaman di atas,
+      // supaya tidak bisa dimanipulasi dari browser vendor.
+      const tx = await contract.submitProposal(nama, BigInt(Math.round(parseFloat(harga))), BigInt(Math.round(parseFloat(exp))), hash);
+      alert("📡 Transaksi terkirim!\nTX: " + tx.hash);
+      await tx.wait(1);
+      alert("✅ TERKONFIRMASI ON-CHAIN!\n" + nama + " berhasil disimpan permanen.\nTX: " + tx.hash);
+
+      ['v-nama','v-npwp','v-pengalaman','v-siujk','v-harga','v-metode'].forEach(id =>
+        document.getElementById(id).disabled = true);
+      document.getElementById('btn-gen-hash').disabled        = true;
+      document.getElementById('v-submitted-banner').style.display = 'flex';
+      await muatRiwayatTender();
+    } catch (err) {
+      const btn = document.getElementById('btn-submit-vendor');
+      btn.disabled = false; btn.textContent = "🚀 Submit & Kunci ke Blockchain";
+      if (err.code !== 4001) alert("❌ Gagal: " + (err.reason || err.message));
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TenderJalanJawa — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="login-container">
+  <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:440px; animation:fadeInUp 0.6s ease;">
+
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <h1 style="font-family:'Playfair Display',serif; color:#0A1628; font-size:2.2rem; font-weight:700; margin-bottom:0.2rem;">TenderJalanJawa</h1>
+      <p style="font-family:'DM Mono',monospace; color:#1D5FA8; font-size:0.8rem; font-weight:500; letter-spacing:0.5px; text-transform:uppercase;">Ethereum Sepolia Testnet Node</p>
+    </div>
+
+    <div class="login-card" style="width:100%; animation:none; box-shadow:0 10px 25px rgba(0,0,0,0.05); border:1px solid #e2e8f0;">
+      <h3 style="font-family:'DM Sans',sans-serif; color:#0A1628; font-size:1.25rem; font-weight:600; margin-bottom:0.25rem;">Portal Akses Sistem</h3>
+      <p style="color:var(--text-light); font-size:0.85rem; margin-bottom:1.5rem;">Sistem Informasi Lelang Tender Kontrak Jalan Jawa</p>
+
+      <div style="text-align:left; margin-bottom:1rem;">
+        <label style="font-size:0.85rem; color:#334155; font-weight:500; display:block; margin-bottom:0.4rem;">Username / ID Akun</label>
+        <input type="text" id="login-username" placeholder="Masukkan username..."
+          style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.9rem; margin-bottom:1rem;">
+
+        <label style="font-size:0.85rem; color:#334155; font-weight:500; display:block; margin-bottom:0.4rem;">Password / Passphrase</label>
+        <input type="password" id="login-password" placeholder="Masukkan password..."
+          style="width:100%; padding:0.75rem; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.9rem; margin-bottom:1.5rem;"
+          onkeydown="if(event.key==='Enter') validasiLogin()">
+      </div>
+
+      <button class="btn btn-primary btn-login" onclick="validasiLogin()">🔐 Verifikasi & Masuk ke Sistem</button>
+      <button class="btn btn-login" onclick="connectMetaMask()" style="background-color:#E28743; color:white; margin-top:0.5rem;">🦊 Hubungkan MetaMask (Connect Wallet)</button>
+
+      <div style="margin:1.25rem 0; display:flex; align-items:center; color:#94a3b8; font-size:0.75rem;">
+        <div style="flex:1; border-bottom:1px solid #e2e8f0;"></div>
+        <span style="padding:0 10px;">ATAU PENGGUNA UMUM</span>
+        <div style="flex:1; border-bottom:1px solid #e2e8f0;"></div>
+      </div>
+
+      <button class="btn btn-outline btn-login" onclick="loginPublik()">👁️ Masuk sebagai Masyarakat (Lihat Monitoring)</button>
+
+      <div id="status-msg" style="display:none; margin-top:1rem; font-size:0.8rem; text-align:center; color:var(--text-light);"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/session.js"></script>
+<script>
+  // Jika sudah login, langsung redirect
+  window.addEventListener('DOMContentLoaded', () => {
+    const role = Session.getRole();
+    if (role === 'admin')  { window.location.href = 'admin.html';  return; }
+    if (role === 'vendor') { window.location.href = 'vendor.html'; return; }
+    if (role === 'publik') { window.location.href = 'publik.html'; return; }
+  });
+
+  function validasiLogin() {
+    const user = document.getElementById('login-username').value.trim();
+    const pass = document.getElementById('login-password').value.trim();
+
+    if (!user || !pass) { alert("⚠️ Username dan Password wajib diisi!"); return; }
+
+    // Cek Admin
+    if (user === "admin123" && pass === "admin123") {
+      Session.setRole('admin');
+      Session.setWallet("0x71C...3A9f (Pokja Pemilihan)");
+      alert("✅ Selamat datang, Admin Pokja Pemilihan!");
+      window.location.href = 'admin.html';
+      return;
+    }
+
+    // Cek Vendor
+    const akun = daftarAkunVendor.find(v => v.user === user && v.pass === pass);
+    if (akun) {
+      Session.setRole('vendor');
+      Session.setWallet(akun.wallet + ` (${user.toUpperCase()})`);
+      alert("✅ Selamat datang, " + user.toUpperCase() + "!");
+      window.location.href = 'vendor.html';
+      return;
+    }
+
+    alert("❌ Otorisasi Ditolak: Username atau password salah!");
+  }
+
+  function loginPublik() {
+    Session.setRole('publik');
+    Session.setWallet('—');
+    alert("ℹ️ Akses Publik. Mode: Read-Only Monitoring.");
+    window.location.href = 'publik.html';
+  }
+
+  async function connectMetaMask() {
+    if (!window.ethereum) { alert("MetaMask belum terinstall!"); return; }
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const addr   = await signer.getAddress();
+      Session.setWallet(addr);
+      showStatus("🦊 MetaMask terhubung: " + addr.substring(0,10) + "...");
+    } catch (err) {
+      alert("Gagal: " + err.message);
+    }
+  }
+
+  function showStatus(msg) {
+    const el = document.getElementById('status-msg');
+    el.textContent   = msg;
+    el.style.display = 'block';
+  }
+</script>
+</body>
+</html>

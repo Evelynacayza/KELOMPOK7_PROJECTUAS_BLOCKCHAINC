@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TenderJalanJawa — Papan Publik</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <h1>TenderJalanJawa</h1>
+    <span>Ethereum Sepolia Testnet</span>
+  </div>
+  <div class="user-badge">
+    <div class="role-pill" id="role-badge">PUBLIK</div>
+    <button class="btn btn-outline" onclick="Session.logout()"
+      style="padding:6px 12px; font-size:0.8rem; background:#ffffff15; color:#fff; border-color:#ffffff30;">
+      Keluar 🚪
+    </button>
+  </div>
+</header>
+
+<nav>
+  <a class="nav-link" href="admin.html"  id="link-admin"  style="display:none;">🔒 Ruang Pokja Pemilihan</a>
+  <a class="nav-link" href="vendor.html" id="link-vendor" style="display:none;">🏢 Portal Unggah Vendor</a>
+  <a class="nav-link active" href="publik.html">👁️ Papan Transparansi Publik</a>
+</nav>
+
+<main>
+
+  <!-- Banner Pemenang -->
+  <div id="pub-banner-pemenang" class="alert alert-success" style="display:none; flex-direction:column; gap:6px;">
+    <h4 style="font-size:1.1rem;">🏆 PEMENANG TENDER DIUMUMKAN OLEH SMART CONTRACT</h4>
+    <div id="pub-text-pemenang"></div>
+  </div>
+
+  <!-- Tabel Riwayat -->
+  <div class="card">
+    <h3>👁️ Papan Pantauan Real-Time Konsumsi Publik</h3>
+    <div class="alert alert-info">
+      <span>🌍</span>
+      <div><strong>Sifat Keterbukaan Publik:</strong> Seluruh masyarakat dapat melihat riwayat penawaran, hash dokumen, dan hasil pemenang yang dikalkulasi oleh algoritma smart contract tanpa rekayasa.</div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h4 style="font-size:1rem; color:var(--navy);">Riwayat Penawaran On-Chain (Read-Only)</h4>
+      <button onclick="refreshDariBlockchain()"
+        style="padding:6px 14px; background:var(--blue-pale); border:1px solid var(--blue); border-radius:6px; color:var(--blue); font-size:0.85rem; cursor:pointer; font-family:inherit; font-weight:500;">
+        🔄 Refresh Data
+      </button>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nama Perusahaan Vendor</th>
+            <th>Nilai Penawaran</th>
+            <th>SHA-256 Document Hash</th>
+            <th>Skor Akhir</th>
+          </tr>
+        </thead>
+        <tbody id="publik-vendor-list">
+          <tr><td colspan="5" style="text-align:center; color:var(--text-light);">Menghubungkan ke jaringan Sepolia...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:flex; gap:16px; margin-top:1.25rem; flex-wrap:wrap;">
+      <div style="background:var(--bg); border-radius:8px; padding:10px 16px; flex:1; min-width:120px;">
+        <div style="font-size:11px; color:var(--text-light); margin-bottom:2px;">Total Penawaran</div>
+        <div id="stat-total" style="font-size:1.4rem; font-weight:700; color:var(--navy);">—</div>
+      </div>
+      <div style="background:var(--bg); border-radius:8px; padding:10px 16px; flex:1; min-width:120px;">
+        <div style="font-size:11px; color:var(--text-light); margin-bottom:2px;">Status Lelang</div>
+        <div id="stat-status" style="font-size:1rem; font-weight:700; color:var(--navy);">—</div>
+      </div>
+      <div style="background:var(--bg); border-radius:8px; padding:10px 16px; flex:1; min-width:120px;">
+        <div style="font-size:11px; color:var(--text-light); margin-bottom:2px;">Contract</div>
+        <div style="font-family:monospace; font-size:0.75rem; color:var(--blue); cursor:pointer;"
+             onclick="window.open('https://sepolia.etherscan.io/address/'+contractAddress,'_blank')">
+          0x...48415 🔗
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verifikasi Hash -->
+  <div class="card">
+    <h3>🔍 Pembuktian Keaslian Dokumen (Integrity Verification)</h3>
+    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:1rem;">
+      Masukkan SHA-256 hash dokumen vendor untuk memverifikasi keasliannya. Hash yang cocok berarti dokumen tidak pernah dimanipulasi sejak pertama kali dikirim ke blockchain.
+    </p>
+    <div class="form-group">
+      <input type="text" id="verify-input" class="form-control"
+        placeholder="Masukkan 64 karakter kode hash SHA-256..."
+        oninput="verifikasiHash()">
+    </div>
+    <div id="verify-result" style="display:none;"></div>
+  </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/session.js"></script>
+<script src="js/blockchain.js"></script>
+<script>
+  if (!Session.requireLogin()) { /* redirect handled */ }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    // Tampilkan nav sesuai role
+    const role = Session.getRole();
+    document.getElementById('role-badge').textContent = role.toUpperCase();
+    if (role === 'admin')  { document.getElementById('link-admin').style.display  = 'flex'; }
+    if (role === 'vendor') { document.getElementById('link-vendor').style.display = 'flex'; }
+
+    // Coba auto-connect untuk ambil data real-time
+    const ok = await autoKoneksiWallet();
+    if (ok) {
+      await sinkronisasiStatus();
+      await muatRiwayatTender();
+    }
+
+    renderTabelPublik();
+    updateStats();
+    cekPemenang();
+  });
+
+  async function refreshDariBlockchain() {
+    const ok = await autoKoneksiWallet();
+    if (!ok) {
+      // Tampilkan data dari session saja
+      renderTabelPublik(); updateStats(); cekPemenang();
+      alert("ℹ️ MetaMask tidak terdeteksi. Menampilkan data dari cache sesi.");
+      return;
+    }
+    await sinkronisasiStatus();
+    await muatRiwayatTender();
+    renderTabelPublik();
+    updateStats();
+    cekPemenang();
+    alert("✅ Data berhasil diperbarui dari Blockchain Sepolia!");
+  }
+
+  function renderTabelPublik() {
+    const vendors = Session.getVendors();
+    const body    = document.getElementById('publik-vendor-list');
+
+    if (vendors.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-light);">Belum ada penawaran resmi yang masuk.</td></tr>';
+      return;
+    }
+
+    body.innerHTML = vendors.map((v, i) => `
+      <tr>
+        <td><strong>${i+1}</strong></td>
+        <td>${v.nama}</td>
+        <td>Rp ${v.harga.toLocaleString('id-ID')}</td>
+        <td><span class="hash-box" style="display:block; max-width:240px;">${v.hash}</span></td>
+        <td><strong>${v.skor !== undefined ? v.skor.toFixed ? v.skor.toFixed(2)+' Poin' : v.skor+' Poin' : '⏳ Menunggu'}</strong></td>
+      </tr>`).join('');
+  }
+
+  function updateStats() {
+    const vendors = Session.getVendors();
+    const status  = Session.getStatus();
+    const map = { 'belum':'⏳ Belum Dibuka', 'buka':'🟢 Terbuka', 'tutup':'🔴 Ditutup', 'selesai':'🏁 Selesai' };
+    document.getElementById('stat-total').textContent  = vendors.length + ' vendor';
+    document.getElementById('stat-status').textContent = map[status] || '—';
+  }
+
+  function cekPemenang() {
+    const winner = Session.getWinner();
+    if (!winner && Session.getStatus() !== 'selesai') return;
+
+    const banner = document.getElementById('pub-banner-pemenang');
+    const text   = document.getElementById('pub-text-pemenang');
+    if (winner) {
+      banner.style.display = 'flex';
+      text.innerHTML = `Pemenang: <strong>${winner.nama}</strong> dengan skor <strong>${winner.skor?.toFixed(2) || '—'} Poin</strong>`;
+    }
+  }
+
+  function verifikasiHash() {
+    const input   = document.getElementById('verify-input').value.trim();
+    const result  = document.getElementById('verify-result');
+    if (!input) { result.style.display = 'none'; return; }
+
+    result.style.display = 'block';
+    const vendors   = Session.getVendors();
+    const ditemukan = vendors.find(v => v.hash === input);
+
+    result.innerHTML = ditemukan
+      ? `<div class="alert alert-success"><span>✅</span><div><strong>Hash Terverifikasi!</strong> Berkas milik <strong>${ditemukan.nama}</strong> terbukti valid dan tercatat di blockchain Sepolia tanpa perubahan.</div></div>`
+      : `<div class="alert alert-danger"><span>❌</span><div><strong>Hash Tidak Ditemukan!</strong> Kode ini tidak terdaftar di ledger. Kemungkinan dokumen palsu atau sudah dimanipulasi.</div></div>`;
+  }
+</script>
+</body>
+</html>

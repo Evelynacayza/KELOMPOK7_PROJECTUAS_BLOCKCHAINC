@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TenderJalanJawa — Admin Pokja</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-area">
+    <h1>TenderJalanJawa</h1>
+    <span>Ethereum Sepolia Testnet</span>
+  </div>
+  <div class="user-badge">
+    <div class="role-pill">Admin</div>
+    <button class="btn btn-outline" onclick="Session.logout()"
+      style="padding:6px 12px; font-size:0.8rem; background:#ffffff15; color:#fff; border-color:#ffffff30;">
+      Keluar 🚪
+    </button>
+  </div>
+</header>
+
+<!-- NAVIGASI -->
+<nav>
+  <a class="nav-link active" href="admin.html">🔒 Ruang Pokja Pemilihan</a>
+  <a class="nav-link" href="vendor.html" id="link-admin" style="display:none;">🏢 Portal Unggah Vendor</a>
+  <a class="nav-link" href="publik.html">👁️ Papan Transparansi Publik</a>
+</nav>
+
+<main>
+  <div class="grid">
+
+    <!-- KOLOM KIRI -->
+    <div>
+      <!-- Kualifikasi -->
+      <div class="card">
+        <h3>📝 Penguncian Kualifikasi Tender Baku</h3>
+        <div class="alert alert-info">
+          <span>💡</span>
+          <div><strong>Ketetapan Blockchain:</strong> Parameter kualifikasi hanya boleh diinput 1 kali. Sekali dikunci, tidak bisa diubah oleh siapapun.</div>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label>Pengalaman Konstruksi Minimum (Tahun)</label>
+            <input type="number" id="adm-min-exp" class="form-control" value="3">
+          </div>
+          <div class="form-group">
+            <label>Pagu Anggaran Maksimum (IDR)</label>
+            <input type="number" id="adm-max-pagu" class="form-control" value="1500000000">
+          </div>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label>Bobot Penilaian Teknis (%)</label>
+            <input type="number" id="adm-weight-tek" class="form-control" value="60">
+          </div>
+          <div class="form-group">
+            <label>Bobot Penilaian Harga (%)</label>
+            <input type="number" id="adm-weight-hrg" class="form-control" value="40" disabled>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-lock-kual" onclick="simpanKualifikasi()">
+          🔒 Kirim & Kunci Kualifikasi ke Blockchain
+        </button>
+      </div>
+
+      <!-- Tabel Vendor -->
+      <div class="card">
+        <h3>📦 Berkas Vendor Masuk (Read-Only Smart Contract State)</h3>
+        <div class="alert alert-warning">
+          <span>🔒</span>
+          <div><strong>Proteksi Data Vendor:</strong> Admin hanya punya hak baca. Data tidak bisa dimodifikasi.</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama Perusahaan</th>
+                <th>Ajuan Harga (IDR)</th>
+                <th>Pengalaman</th>
+                <th>SHA-256 Hash</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-vendor-list">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-light);">Belum ada berkas masuk. Hubungkan MetaMask untuk load data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOLOM KANAN -->
+    <div>
+      <div class="card">
+        <h3>⚙️ Status Smart Contract</h3>
+        <div class="form-group">
+          <label>Status Gerbang Lelang</label>
+          <div id="contract-status-badge" class="status-node" style="color:var(--red); font-weight:bold;">⛔ BELUM DIBUKA</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="btn btn-teal"    id="btn-ctrl-open"  onclick="updateStatusLokal('buka')"  disabled>🟢 Buka Gerbang Lelang</button>
+          <button class="btn btn-danger"  id="btn-ctrl-close" onclick="jalankanCloseBidding()"     disabled>🔴 Tutup Gerbang Lelang</button>
+          <button class="btn btn-primary" id="btn-ctrl-calc"  onclick="umumkanPemenang()"          disabled
+            style="background-color:var(--navy);">🧮 Umumkan Pemenang Otomatis</button>
+        </div>
+
+        <!-- Node Info Panel -->
+        <div style="margin-top:18px; background:#0A1628; border-radius:10px; padding:14px; border:1px solid #1A3356;">
+          <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#2E86DE; margin-bottom:10px;">⛓️ Node Connection Info</div>
+
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:11px; color:#64748b;">Network</span>
+            <span style="font-size:11px; font-family:monospace; background:#0F7B6C22; color:#0F7B6C; padding:2px 8px; border-radius:20px; font-weight:600;">🟢 Sepolia Testnet</span>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Contract Address</div>
+            <div style="font-family:monospace; font-size:10.5px; color:#93c5fd; background:#112240; padding:5px 8px; border-radius:6px; cursor:pointer; word-break:break-all;"
+                 onclick="window.open('https://sepolia.etherscan.io/address/'+contractAddress,'_blank')">
+              0x...48415 🔗
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Admin Wallet</div>
+            <div id="node-wallet" style="font-family:monospace; font-size:10.5px; color:#fbbf24; background:#112240; padding:5px 8px; border-radius:6px; word-break:break-all;">
+              ⚠️ Belum terhubung
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:11px; color:#64748b;">Penawaran Masuk</span>
+            <span id="node-vendor-count" style="font-size:13px; font-weight:700; color:#e2e8f0;">0 vendor</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+            <span style="font-size:11px; color:#64748b;">Block Terakhir</span>
+            <span id="node-block" style="font-family:monospace; font-size:11px; color:#e2e8f0;"># —</span>
+          </div>
+          <button onclick="window.open('https://sepolia.etherscan.io/address/'+contractAddress,'_blank')"
+            style="width:100%; padding:7px; background:#1A3356; border:1px solid #2E86DE33; border-radius:7px; color:#2E86DE; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit;">
+            🔍 Buka di Etherscan Sepolia ↗
+          </button>
+
+          <button onclick="hubungkanDompet(onWalletConnected)"
+            style="width:100%; padding:7px; background:#E28743; border:none; border-radius:7px; color:white; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; margin-top:8px;">
+            🦊 Connect / Refresh MetaMask
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/session.js"></script>
+<script src="js/blockchain.js"></script>
+<script>
+  // Guard: hanya admin yang boleh akses
+  if (!Session.requireLogin(['admin'])) { /* redirect handled */ }
+
+  // Init halaman
+  window.addEventListener('DOMContentLoaded', async () => {
+    muatDariSession();
+    const ok = await autoKoneksiWallet();
+    if (ok) await onWalletConnected(await signer.getAddress());
+  });
+
+  function muatDariSession() {
+    if (Session.getKualLocked()) {
+      const kual = Session.getKual();
+      document.getElementById('adm-min-exp').value    = kual.minExp    || 3;
+      document.getElementById('adm-max-pagu').value   = kual.maxPagu   || 1500000000;
+      document.getElementById('adm-weight-tek').value = kual.weightTek || 60;
+      ['adm-min-exp','adm-max-pagu','adm-weight-tek'].forEach(id => document.getElementById(id).disabled = true);
+      document.getElementById('btn-lock-kual').disabled = true;
+    }
+    renderTabelAdmin();
+    refreshBadge();
+  }
+
+  async function onWalletConnected(addr) {
+    document.getElementById('node-wallet').textContent = addr;
+    document.getElementById('node-wallet').style.color = '#4ade80';
+    try {
+      const blockNum = await provider.getBlockNumber();
+      document.getElementById('node-block').textContent = '# ' + blockNum.toLocaleString('id-ID');
+    } catch {}
+    await sinkronisasiStatus();
+    const vendors = await muatRiwayatTender();
+    renderTabelAdmin();
+    document.getElementById('node-vendor-count').textContent = vendors.length + ' vendor';
+    refreshBadge();
+  }
+
+  async function simpanKualifikasi() {
+    const exp  = document.getElementById('adm-min-exp').value;
+    const pagu = document.getElementById('adm-max-pagu').value;
+    const tek  = document.getElementById('adm-weight-tek').value;
+    if (!exp || !pagu || !tek) { alert('Form belum lengkap!'); return; }
+    if (!contract) { alert("⚠️ Hubungkan MetaMask terlebih dahulu!"); return; }
+
+    const btn = document.getElementById('btn-lock-kual');
+    try {
+      btn.disabled = true; btn.textContent = "⏳ Mengirim ke Blockchain...";
+      const tx = await contract.lockKualifikasi(BigInt(exp), BigInt(pagu), BigInt(tek));
+      alert("📡 Transaksi terkirim! Menunggu konfirmasi...\nTX: " + tx.hash);
+      await tx.wait(1);
+
+      Session.setKual({ minExp: parseFloat(exp), maxPagu: parseFloat(pagu), weightTek: parseFloat(tek) });
+      Session.setKualLocked(true);
+      Session.setStatus('belum');
+
+      ['adm-min-exp','adm-max-pagu','adm-weight-tek'].forEach(id => document.getElementById(id).disabled = true);
+      alert('🔒 Kualifikasi berhasil dikunci ON-CHAIN! Skor vendor sekarang dihitung otomatis oleh smart contract.');
+      refreshBadge();
+    } catch (err) {
+      btn.disabled = false; btn.textContent = "🔒 Kirim & Kunci Kualifikasi ke Blockchain";
+      if (err.code !== 4001) alert("❌ Gagal: " + (err.reason || err.message));
+    }
+  }
+
+  function updateStatusLokal(s) { Session.setStatus(s); refreshBadge(); }
+
+  async function jalankanCloseBidding() {
+    if (!contract) { alert("Hubungkan MetaMask terlebih dahulu!"); return; }
+    try {
+      const tx = await contract.closeBidding();
+      alert("📡 Menutup lelang...");
+      await tx.wait(1);
+      Session.setStatus('tutup');
+      Session.setKualLocked(true);
+      alert("🔒 Lelang DITUTUP on-chain!\nTX: " + tx.hash);
+      refreshBadge();
+    } catch (err) {
+      alert("❌ Gagal: " + (err.reason || err.message));
+    }
+  }
+
+  async function umumkanPemenang() {
+    const vendors = Session.getVendors();
+    if (vendors.length === 0) { alert("Belum ada vendor yang submit!"); return; }
+    if (!contract) { alert("Hubungkan MetaMask terlebih dahulu!"); return; }
+    try {
+      document.getElementById('btn-ctrl-calc').textContent = "⏳ Memproses...";
+      document.getElementById('btn-ctrl-calc').disabled    = true;
+
+      const buka = await contract.isBiddingOpen();
+      if (buka) {
+        const txClose = await contract.closeBidding();
+        await txClose.wait(1);
+      }
+      const txWin = await contract.announceWinner();
+      alert("📡 Smart contract menghitung pemenang...");
+      await txWin.wait(1);
+
+      Session.setStatus('selesai');
+      alert("🏆 PEMENANG DIKONFIRMASI ON-CHAIN!\nTX: " + txWin.hash);
+      refreshBadge();
+      const newVendors = await muatRiwayatTender();
+      renderTabelAdmin();
+      document.getElementById('node-vendor-count').textContent = newVendors.length + ' vendor';
+    } catch (err) {
+      document.getElementById('btn-ctrl-calc').textContent = "🧮 Umumkan Pemenang Otomatis";
+      document.getElementById('btn-ctrl-calc').disabled    = false;
+      if (err.code !== 4001) alert("❌ Gagal: " + (err.reason || err.message));
+    }
+  }
+
+  function renderTabelAdmin() {
+    const vendors = Session.getVendors();
+    const body    = document.getElementById('admin-vendor-list');
+    if (vendors.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-light);">Belum ada berkas masuk.</td></tr>';
+      return;
+    }
+    body.innerHTML = vendors.map(v => `
+      <tr>
+        <td><strong>${v.nama}</strong></td>
+        <td>Rp ${v.harga.toLocaleString('id-ID')}</td>
+        <td>${v.pengalaman} Tahun &nbsp;<span style="color:var(--text-light); font-size:0.8em;">(Skor: ${v.skor ?? '—'})</span></td>
+        <td><span class="hash-box" style="display:block; max-width:200px;">${v.hash}</span></td>
+        <td><span style="color:var(--teal); font-weight:600;">🔒 View Only</span></td>
+      </tr>`).join('');
+  }
+
+  function refreshBadge() {
+    const badge    = document.getElementById('contract-status-badge');
+    const btnOpen  = document.getElementById('btn-ctrl-open');
+    const btnClose = document.getElementById('btn-ctrl-close');
+    const btnCalc  = document.getElementById('btn-ctrl-calc');
+    const locked   = Session.getKualLocked();
+    const status   = Session.getStatus();
+
+    const map = {
+      'belum':   ['⏳ KUALIFIKASI TERKUNCI (SIAP DIBUKA)', 'var(--amber)',      false, true,  true ],
+      'buka':    ['🟢 LELANG TERBUKA (IS_BIDDING_OPEN)',   'var(--teal)',       true,  false, true ],
+      'tutup':   ['🔴 LELANG DITUTUP (IS_BIDDING_CLOSE)',  'var(--red)',        true,  true,  false],
+      'selesai': ['🏁 LELANG SELESAI (WINNER ANNOUNCED)',  'var(--blue-bright)', true, true,  true ],
+    };
+
+    if (!locked) {
+      badge.innerHTML   = '⛔ KUALIFIKASI BELUM DIINPUT';
+      badge.style.color = 'var(--red)';
+      [btnOpen, btnClose, btnCalc].forEach(b => b.disabled = true);
+      return;
+    }
+
+    const [text, color, od, cd, wd] = map[status] || map['belum'];
+    badge.innerHTML   = text;
+    badge.style.color = color;
+    btnOpen.disabled  = od;
+    btnClose.disabled = cd;
+    btnCalc.disabled  = wd;
+  }
+</script>
+</body>
+</html>
