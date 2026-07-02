@@ -8,10 +8,10 @@
 
 | Nama | NIM |
 |------|-----|
-| *(isi nama)* | *(isi NIM)* |
-| *(isi nama)* | *(isi NIM)* |
-| *(isi nama)* | *(isi NIM)* |
-| *(isi nama)* | *(isi NIM)* |
+| *Hasvan Wijaya Pratam* | *202332096* |
+| *Marisa Yanuari Sitio* | *202332099* |
+| *Evelyna Beatrice Cayza Jelita* | *202332101* |
+| *Amalia Khairunnisa* | *202332102* |
 
 ---
 
